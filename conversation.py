@@ -23,6 +23,7 @@ def prep():
 
     conversation =readData('./data/conversation_comment_list', _header = 0)
     sorted_lis = conversation['sorted_list']
+
     liscnt = [len(i) for i in sorted_lis]
     print(np.median(liscnt))
     print()
@@ -39,7 +40,7 @@ def prep():
 
     positions = []
     print(len(filterlis))
-    liscnt = [len(i) for i in filterlis]
+    liscnt = []
 
     for lis in filterlis:
 
@@ -51,6 +52,11 @@ def prep():
     print(np.max(positions))
     print(np.median(positions))
     print(np.mean(positions))
+
+    print(np.max(liscnt))
+    print(np.median(liscnt))
+    print(np.mean(liscnt))
+    
 
     plotpos = np.asarray(positions)
     # fig, ax = plt.subplot()
@@ -151,12 +157,16 @@ def getTwo(f1, f2):
 
 def filterFunc(row):
 
+
     if len(row['commentlis']) < 1:
         return False
     return True
 
 def PCA():
-    pass
+
+
+
+    
 def filterEmoji(row):
     Flag = False
     for i in row['commentlis']:
@@ -175,17 +185,27 @@ def clusterRepo():
     df = df.fillna(0)
     df['issuelis'] = df['comment_list'].apply(getfirstLis)
     df['commentlis'] = df['comment_lis'].apply(getLis)
+
     max = -1
     for i in df['commentlis']:
         if len(i) > max:
             max = len(i)
     print('the max val is max: ', max)
+
     print(df.head())
+
+
     filterlabel = df.apply(filterFunc, axis = 1)
     df = df[filterlabel] 
-    filteremoji = df.apply(filterEmoji, axis=1)
+    filteremoji = df.apply(filterEmoji, axis = 1)
     df = df[filteremoji]
-   
+
+
+    lengths = [len(i) for i in df['commentlis']]
+    
+    print(np.average(lengths))
+    print(np.max(lengths))
+    print(np.median(lengths))
 
     df['sortlis'] = df['issuelis'] + df['commentlis']
     
@@ -216,7 +236,6 @@ def clusterRepo():
     print(np.mean(length))
     print(np.median(length))
     
-
     print(np.max(positions))
     print(np.mean(positions))
     print(np.median(positions))
@@ -235,11 +254,17 @@ def clusterRepo():
     df = df.merge(riddf, on='commentissueid', how='outer')
 
     def groupbyFunc(df):
-
+        vec = np.zeros(923)
+        for idx, val in enumerate(df['sortlis']):
+            if val == 'true':
+                vec[idx] = 1
+                break
         pass
         
     df = df.groupby('rid').apply(groupbyFunc)
-    
+    print(df.head())
+    df.to_csv("processed_cluster.csv")    
+    df = df['rid']
 
 
     
@@ -250,6 +275,10 @@ def clusterRepo():
     
 
 def analyzeCluster():
+
+    
+    
+    pass
 
 
 if __name__ == "__main__":

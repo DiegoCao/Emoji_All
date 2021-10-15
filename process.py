@@ -258,6 +258,7 @@ def e5():
 
     # x = events
     x = df['repouserscnt']
+    
 
     plot_reg(x, y)
 
