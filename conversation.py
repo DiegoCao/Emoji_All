@@ -1,4 +1,5 @@
 import numpy as np
+from pandas.core.frame import DataFrame
 import seaborn as sns
 import pandas as pd 
 import glob
@@ -9,15 +10,21 @@ import sklearn
 from process import readData, plot_reg
 from sklearn.decomposition import PCA
 
-def calPos(lis):
+
+NUM_CLUSTER = 10
+
+def calPCA(lis):
 
     pca = PCA(n_components = 10)
-    X = lis
+
+    X = np.array(lis, dtype=np.float64)
     pca.fit(X)
     print(pca.explained_variance_)
     pca.n_components = 3
     X_reduce = pca.fit_transform(X)
     print('the shape of X is: ', X_reduce.shape)
+
+    return X_reduce
 
 
 
@@ -168,9 +175,7 @@ def filterFunc(row):
         return False
     return True
 
-def PCA():
 
-    pass
 
 
 
@@ -251,12 +256,10 @@ def clusterRepo():
     print(positions)
     print(np.max(length))
     print(np.mean(length))
-    print(np.median(length))
-    
+    print(np.median(length))  
     print(np.max(positions))
     print(np.mean(positions))
     print(np.median(positions))
-
 
     riddf = readData("data/issueridmap", _header=0)
     riddf = riddf[pd.notnull(riddf.commentissueid)]
@@ -267,7 +270,6 @@ def clusterRepo():
     print(riddf.keys())
     print(df.keys())
     
-
     
     riddf.reset_index(inplace=True)
     df = df.merge(riddf, on='commentissueid', how='inner')
@@ -275,7 +277,7 @@ def clusterRepo():
     print('the max current is: ', np.max(lengths))
     maxval = int(np.max(lengths))
     print(df.head())
-
+    dfold = df
 
     def groupbyFunc(df):
         vec = np.zeros(maxval)
@@ -288,18 +290,33 @@ def clusterRepo():
             for _id, v in enumerate(val):
                 if v == 'true' or v ==' true':
                     vec[_id] = 1
-
-        return vec/cnt, length/cnt
-        pass
-        
+        return vec/cnt
+    def groupbylength(df):
+        vec = np.zeros(maxval)
+        cnt = 0
+        length = 0
+        for idx, val in enumerate(df):
+            length+= len(val)
+            cnt += 1
+            print(val)
+            for _id, v in enumerate(val):
+                if v == 'true' or v ==' true':
+                    vec[_id] = 1
+        return length/cnt
+ 
     df = df.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
+    df2 = dfold.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
+    df2['avglength'] = df2['sortlis'].apply(groupbylength)
+    df2 = df2[['rid', 'avglength']]
+    
+    df['sortlis'] = df['sortlis'].apply(groupbyFunc)
+    df = df.merge(df2, on='rid',how='inner')
     print(df.head())
-    df['sortlis'], df['avglength'] = df['sortlis'].apply(groupbyFunc)
 
-    df = df[df['avglength'] > 4]
+    # df = df[df['avglength'] > 4]
     print('the remaining rows are: ', df.count())
     print(df.head())
-    df.to_csv("processed_cluster_1.csv")    
+    df.to_pickle('conversation.pkl')
 
 
 
@@ -309,23 +326,72 @@ def clusterRepo():
     
 
     
-
+from ast import literal_eval
 def analyzeCluster():
 
-    df = pd.read_csv('processed_cluster.csv')
-    df.set_index(['rid', 'vec'])
+    df = pd.read_pickle('conversation.pkl')
+    # df.set_index(['rid', 'vec'])
+
+
+    # df['totalsum'] = df['sortlis'].apply(sumVec)
+
+    df = df[df['avglength']>]
+
+    print('the bigger than 4 cnt: ', df.count())
+    
+
+
+    dfevent = readData('./data/repoavguser_events_fix')
+    dfevent.columns = ['rid', 'events']
+    event1 = dfevent['events']
+
+    aids = readData('./data/dfusers', _header = 0)
+    print('the initial mean', np.mean(event1))
+    df = df.merge(dfevent, on='rid', how='inner').merge(aids,on='rid',how='inner')
+    df['avgevents'] = df['events']/df['repouserscnt']
     print(df.head())
-    dfevent = readData('./data/repoavguser_events_fix', _columns=['rid', 'events'])
-    df = df.merge(dfevent, on='rid', how='outer')
+
+    X = df['sortlis']
+
+    for i in X:
+        arr = np.asarray(i)
+        if len(i)!=924:
+            print('error')
+            exit(1)
+
+    X = np.vstack(X)
+    print(X.shape)
+    events = df['events']
+    X_new = calPCA(X)
     
+    
+    from sklearn import cluster
 
     
+    kmeans = cluster.KMeans(n_clusters = NUM_CLUSTER)
+    kmeans.fit(X_new)
+    labels = kmeans.labels_
 
-    
+    keys = [i for i in range(0, NUM_CLUSTER)]
+    # dictevents = dict.fromkeys(keys)
+    dictevents = dict()
+    events = df['avgevents']
+    print('the mean of events', np.median(events))
+    for idx, lab in enumerate(labels):
+        if lab not in dictevents:
+            dictevents[lab] = list()
+        dictevents[lab].append(events[idx])
 
-    pass
+    res = [np.mean(i) for i in dictevents.values()]
+    print('finished')
+    plt.plot(res)
+    plt.xlabel('cluster')
+    plt.ylabel('repo average events (then perform average again)')
+
+    plt.show()
+
 
 
 if __name__ == "__main__":
 
-    clusterRepo()
+    analyzeCluster()
