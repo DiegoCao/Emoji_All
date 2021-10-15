@@ -7,16 +7,24 @@ import os
 import numpy as np
 import sklearn
 from process import readData, plot_reg
+from sklearn.decomposition import PCA
 
 def calPos(lis):
 
-    for vec in lis:
-        if len(vec) > 10:
-            
-            pass
+    pca = PCA(n_components = 10)
+    X = lis
+    pca.fit(X)
+    print(pca.explained_variance_)
+    pca.n_components = 3
+    X_reduce = pca.fit_transform(X)
+    print('the shape of X is: ', X_reduce.shape)
 
 
 
+def runPCA():
+
+
+    pass
 
 
 def prep():
@@ -156,13 +164,12 @@ def getTwo(row):
     
 
 def filterFunc(row):
-
-
     if len(row['commentlis']) < 1:
         return False
     return True
 
 def PCA():
+
     pass
 
 
@@ -207,6 +214,7 @@ def clusterRepo():
     print(np.average(lengths))
     print(np.max(lengths))
     print(np.median(lengths))
+
 
 
     df['sortlis'] = df.apply(getTwo, axis=1)
@@ -258,27 +266,41 @@ def clusterRepo():
     df.reset_index(inplace=True)
     print(riddf.keys())
     print(df.keys())
+    
 
+    
     riddf.reset_index(inplace=True)
-    df = df.merge(riddf, on='commentissueid', how='outer')
+    df = df.merge(riddf, on='commentissueid', how='inner')
+    lengths = [len(i) for i in df['sortlis']]
+    print('the max current is: ', np.max(lengths))
+    maxval = int(np.max(lengths))
+    print(df.head())
+
 
     def groupbyFunc(df):
-        vec = np.zeros(923)
+        vec = np.zeros(maxval)
         cnt = 0
-        for idx, val in enumerate(df['sortlis']):
+        length = 0
+        for idx, val in enumerate(df):
+            length+= len(val)
             cnt += 1
+            print(val)
             for _id, v in enumerate(val):
                 if v == 'true' or v ==' true':
                     vec[_id] = 1
 
-        return vec/cnt
+        return vec/cnt, length/cnt
         pass
         
-    df = df.groupby('rid').apply(groupbyFunc)
+    df = df.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
     print(df.head())
-    df.to_csv("processed_cluster.csv")    
-    
-    df = df['rid']
+    df['sortlis'], df['avglength'] = df['sortlis'].apply(groupbyFunc)
+
+    df = df[df['avglength'] > 4]
+    print('the remaining rows are: ', df.count())
+    print(df.head())
+    df.to_csv("processed_cluster_1.csv")    
+
 
 
     
@@ -290,8 +312,17 @@ def clusterRepo():
 
 def analyzeCluster():
 
+    df = pd.read_csv('processed_cluster.csv')
+    df.set_index(['rid', 'vec'])
+    print(df.head())
+    dfevent = readData('./data/repoavguser_events_fix', _columns=['rid', 'events'])
+    df = df.merge(dfevent, on='rid', how='outer')
+    
 
     
+
+    
+
     pass
 
 
