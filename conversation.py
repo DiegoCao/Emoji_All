@@ -146,11 +146,11 @@ def getLis(lis):
     
     return thelis
 
-def getTwo(f1, f2):
+def getTwo(row):
     lis = []
-    for i in f1:
+    for i in row['issuelis']:
         lis.append(i)
-    for i in f2:
+    for i in row['commentlis']:
         lis.append(i)
     return lis
     
@@ -163,6 +163,7 @@ def filterFunc(row):
     return True
 
 def PCA():
+    pass
 
 
 
@@ -207,9 +208,16 @@ def clusterRepo():
     print(np.max(lengths))
     print(np.median(lengths))
 
-    df['sortlis'] = df['issuelis'] + df['commentlis']
-    
-    df.to_csv("sortlis.csv")
+
+    df['sortlis'] = df.apply(getTwo, axis=1)
+    # def readFunc(df):
+ 
+    #     return df[1:-1].split(",")
+
+    # df = pd.read_csv("sortlis.csv")
+    # print(df.head())
+    # df['sortlis'] = df['sortlis'].apply(readFunc)
+    # df.to_csv("sortlis.csv")
     # def sortFirstposvec(vec):
     #     lis = []
     #     flag = False
@@ -228,10 +236,11 @@ def clusterRepo():
     for lis in dealis:
         length.append(len(lis))
         for idx, val in enumerate(lis):
-            if val == "true":
+            if val == 'true' or val == ' true':
                 positions.append(idx)
                 break
 
+    print(positions)
     print(np.max(length))
     print(np.mean(length))
     print(np.median(length))
@@ -255,15 +264,20 @@ def clusterRepo():
 
     def groupbyFunc(df):
         vec = np.zeros(923)
+        cnt = 0
         for idx, val in enumerate(df['sortlis']):
-            if val == 'true':
-                vec[idx] = 1
-                break
+            cnt += 1
+            for _id, v in enumerate(val):
+                if v == 'true' or v ==' true':
+                    vec[_id] = 1
+
+        return vec/cnt
         pass
         
     df = df.groupby('rid').apply(groupbyFunc)
     print(df.head())
     df.to_csv("processed_cluster.csv")    
+    
     df = df['rid']
 
 
@@ -276,7 +290,7 @@ def clusterRepo():
 
 def analyzeCluster():
 
-    
+
     
     pass
 
