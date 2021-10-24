@@ -9,9 +9,49 @@ import numpy as np
 import sklearn
 from process import readData, plot_reg
 from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
 
 
 NUM_CLUSTER = 10
+
+def optimalK(data, nrefs=3, maxClusters=15):
+    """
+    Calculates KMeans optimal K using Gap Statistic 
+    Params:
+        data: ndarry of shape (n_samples, n_features)
+        nrefs: number of sample reference datasets to create
+        maxClusters: Maximum number of clusters to test for
+    Returns: (gaps, optimalK)
+    """
+    gaps = np.zeros((len(range(1, maxClusters)),))
+    resultsdf = pd.DataFrame({'clusterCount':[], 'gap':[]})
+    for gap_index, k in enumerate(range(1, maxClusters)):
+# Holder for reference dispersion results
+        refDisps = np.zeros(nrefs)
+# For n references, generate random sample and perform kmeans getting resulting dispersion of each loop
+        for i in range(nrefs):
+            
+            # Create new random reference set
+            randomReference = np.random.random_sample(size=data.shape)
+            
+            # Fit to it
+            km = KMeans(k)
+            km.fit(randomReference)
+            
+            refDisp = km.inertia_
+            refDisps[i] = refDisp
+# Fit cluster to original data and create dispersion
+        km = KMeans(k)
+        km.fit(data)
+        
+        origDisp = km.inertia_
+# Calculate gap statistic
+        gap = np.log(np.mean(refDisps)) - np.log(origDisp)
+# Assign this loop's gap statistic to gaps
+        gaps[gap_index] = gap
+        
+        resultsdf = resultsdf.append({'clusterCount':k, 'gap':gap}, ignore_index=True)
+
 
 def calPCA(lis):
 
@@ -291,6 +331,8 @@ def clusterRepo():
                 if v == 'true' or v ==' true':
                     vec[_id] = 1
         return vec/cnt
+
+    
     def groupbylength(df):
         vec = np.zeros(maxval)
         cnt = 0
@@ -304,29 +346,56 @@ def clusterRepo():
                     vec[_id] = 1
         return length/cnt
  
+    def calRepoAvg(df):
+        vec = np.zeros(maxval)
+        cnt = 0
+        length = 0
+        idxlist = []
+        for idx, val in enumerate(df):
+            length+= len(val)
+            cnt += 1
+            print(val)
+            for _id, v in enumerate(val):
+                if v == 'true' or v ==' true':
+                    idxlist.append(_id)
+                    break
+        avgpos = np.average(idxlist)     
+        return avgpos
+            
     df = df.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
     df2 = dfold.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
+    df3 = dfold.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
     df2['avglength'] = df2['sortlis'].apply(groupbylength)
     df2 = df2[['rid', 'avglength']]
-    
+    df3['avgpos'] = df3['sortlis'].apply(calRepoAvg)
+    df3 = df3[['rid', 'avgpos']]
     df['sortlis'] = df['sortlis'].apply(groupbyFunc)
     df = df.merge(df2, on='rid',how='inner')
+    df = df.merge(df3, on='rid',how='inner')
     print(df.head())
 
     # df = df[df['avglength'] > 4]
     print('the remaining rows are: ', df.count())
     print(df.head())
-    df.to_pickle('conversation.pkl')
-
-
-
-    
-    
-
-    
-
+    df.to_pickle('conversation_new.pkl')
     
 from ast import literal_eval
+
+def findOptimal(X):
+    sumofsquareddis = []
+    K = range(20, 10, 200)
+    for k in K:
+        km = KMeans(n_clusters=k)
+        km = km.fit(X)
+        sumofsquareddis.append(km.inertia_)
+
+    plt.plot(K, sumofsquareddis,'bx-')
+    plt.xlabel('k')
+    plt.ylabel('Sum_of_squared_distances')  
+    plt.title('Elbow Method For Optimal k')
+    plt.show()
+
+
 def analyzeCluster():
 
     df = pd.read_pickle('conversation.pkl')
@@ -335,7 +404,7 @@ def analyzeCluster():
 
     # df['totalsum'] = df['sortlis'].apply(sumVec)
 
-    df = df[df['avglength']>]
+    # df = df[df['avglength']>5]
 
     print('the bigger than 4 cnt: ', df.count())
     
@@ -346,24 +415,39 @@ def analyzeCluster():
     event1 = dfevent['events']
 
     aids = readData('./data/dfusers', _header = 0)
-    print('the initial mean', np.mean(event1))
     df = df.merge(dfevent, on='rid', how='inner').merge(aids,on='rid',how='inner')
     df['avgevents'] = df['events']/df['repouserscnt']
+    print('the initial mean', np.mean(df['avgevents']))
+
     print(df.head())
 
     X = df['sortlis']
-
+    maxidxlis = []
     for i in X:
         arr = np.asarray(i)
+        cnt = 0
+        for j in arr:
+            if j > 0:
+                maxidxlis.append(cnt)
+            cnt += 1
+
+
         if len(i)!=924:
             print('error')
             exit(1)
 
-    X = np.vstack(X)
-    print(X.shape)
-    events = df['events']
-    X_new = calPCA(X)
+    print('the max value of the idx is ', max(maxidxlis))
     
+    # plt.hist(maxidxlis)
+    # plt.show()
+    
+    # X = np.vstack(X)
+    # print(X.shape)
+    # X_new = calPCA(X)
+    X = np.vstack(X)
+    # optimalK(X)
+    findOptimal(X)
+    X_new = X
     
     from sklearn import cluster
 
@@ -383,6 +467,14 @@ def analyzeCluster():
         dictevents[lab].append(events[idx])
 
     res = [np.mean(i) for i in dictevents.values()]
+    
+
+#Then get the frequency count of the non-negative labels
+    counts = np.bincount(labels[labels>=0])
+    actualcnts = counts*X_new.shape[0]
+
+    print(counts)
+    print(actualcnts)
     print('finished')
     plt.plot(res)
     plt.xlabel('cluster')
@@ -393,5 +485,5 @@ def analyzeCluster():
 
 
 if __name__ == "__main__":
-
+    # clusterRepo()
     analyzeCluster()
