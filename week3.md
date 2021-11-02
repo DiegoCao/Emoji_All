@@ -4,13 +4,13 @@
 
 1. Count
 
-- [ ] Count emoji variance per repo (groupby rid, count variance, return float data)
-- [ ] Count post/issue/comment emoji 占比
+- [x] Count emoji variance per repo (groupby rid, count variance, return float data)
+- [x] Count post/issue/comment emoji 占比
 - [x] Count Repo Type Distribution (Like PR event distribution)
 
 2. Plot
-- [ ] Plot total events 占比
-- [ ] Plot 
+- [x] Plot total events 占比
+
 
 **
 
