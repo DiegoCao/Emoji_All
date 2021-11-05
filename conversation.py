@@ -12,8 +12,9 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 
 
-NUM_CLUSTER = 10
 
+
+NUM_CLUSTER = 10
 def optimalK(data, nrefs=3, maxClusters=15):
     """
     Calculates KMeans optimal K using Gap Statistic 
@@ -43,7 +44,6 @@ def optimalK(data, nrefs=3, maxClusters=15):
 # Fit cluster to original data and create dispersion
         km = KMeans(k)
         km.fit(data)
-        
         origDisp = km.inertia_
 # Calculate gap statistic
         gap = np.log(np.mean(refDisps)) - np.log(origDisp)
@@ -56,14 +56,12 @@ def optimalK(data, nrefs=3, maxClusters=15):
 def calPCA(lis):
 
     pca = PCA(n_components = 10)
-
     X = np.array(lis, dtype=np.float64)
     pca.fit(X)
     print(pca.explained_variance_)
     pca.n_components = 3
     X_reduce = pca.fit_transform(X)
     print('the shape of X is: ', X_reduce.shape)
-
     return X_reduce
 
 
@@ -73,6 +71,26 @@ def runPCA():
 
     pass
 
+
+def plotDataHisto(metrics, labels):
+    cntdict = dict()
+    figure, axis = plt.subplots(2, 5)
+    for idx, val in enumerate(labels):
+        if val not in cntdict:
+            cntdict[val] = list()
+        cntdict[val].append(metrics[idx])
+
+    a = axis.ravel()
+    for idx, ax in enumerate(a):
+        ax.hist(cntdict[idx])
+        title_ = "cluster"+str(idx)
+        ax.set_title(title_)
+        ax.set_xlabel("average length calculation")
+        ax.set_ylabel("count")
+
+    plt.tight_layout()
+    plt.show()
+        
 
 def prep():
 
@@ -114,7 +132,6 @@ def prep():
     
 
     plotpos = np.asarray(positions)
-    # fig, ax = plt.subplot()
     sns.ecdfplot(data=positions)    
     plt.xlabel('postions of emoji appearance in one conversation list')
     plt.savefig('week4_5.png')
@@ -419,6 +436,7 @@ def analyzeCluster():
     df['avgevents'] = df['events']/df['repouserscnt']
     print('the initial mean', np.mean(df['avgevents']))
 
+    pos = df['avglength']
     print(df.head())
 
     X = df['sortlis']
@@ -446,7 +464,7 @@ def analyzeCluster():
     # X_new = calPCA(X)
     X = np.vstack(X)
     # optimalK(X)
-    findOptimal(X)
+    # findOptimal(X)
     X_new = X
     
     from sklearn import cluster
@@ -455,18 +473,21 @@ def analyzeCluster():
     kmeans = cluster.KMeans(n_clusters = NUM_CLUSTER)
     kmeans.fit(X_new)
     labels = kmeans.labels_
+    print(labels)
 
     keys = [i for i in range(0, NUM_CLUSTER)]
     # dictevents = dict.fromkeys(keys)
     dictevents = dict()
-    events = df['avgevents']
-    print('the mean of events', np.median(events))
-    for idx, lab in enumerate(labels):
-        if lab not in dictevents:
-            dictevents[lab] = list()
-        dictevents[lab].append(events[idx])
+    # events = df['avgevents']
 
-    res = [np.mean(i) for i in dictevents.values()]
+    # print('the mean of events', np.median(events))
+    plotDataHisto(pos, labels=labels)
+    # for idx, lab in enumerate(labels):
+    #     if lab not in dictevents:
+    #         dictevents[lab] = list()
+    #     dictevents[lab].append(events[idx])
+
+    # res = [np.mean(i) for i in dictevents.values()]
     
 
 #Then get the frequency count of the non-negative labels
@@ -476,7 +497,7 @@ def analyzeCluster():
     print(counts)
     print(actualcnts)
     print('finished')
-    plt.plot(res)
+    # plt.plot(res)
     plt.xlabel('cluster')
     plt.ylabel('repo average events (then perform average again)')
 
