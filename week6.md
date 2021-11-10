@@ -1,8 +1,9 @@
 # Week 6
 
-- [ ] Sort the repo by rid，先研究可聚类性，clusterability
-- [ ] 不同cluster里的repo，是否emoji使用有相关性 (例如cluster 总数)
-- [ ] 
+- [x] Sort the repo by rid，先研究可聚类性，clusterability
+- [x] 不同cluster里的repo，是否emoji使用有相关性 (例如cluster 总数)
+- [x] examine Issue/without issue case
+- [x] Apply PCA?
 
 
 
@@ -47,15 +48,9 @@ Cluster Size:
 
 感觉聚合性不是很高，orz
 
-Frequency of it: 
+Frequency of it: in other
 
-
-
-
-
-
-
-
+![]()
 
 Filter the 10 result:
 

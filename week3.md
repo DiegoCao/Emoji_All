@@ -129,3 +129,6 @@ conversation里有多快出现emoji,
 
 
 ![](/Users/hangruicao/Documents/emoji/week3_14.png)
+
+
+Week 3 other images shown in week3_1.png

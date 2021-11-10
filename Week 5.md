@@ -2,7 +2,7 @@
 
 - [x] Examine in which Repo emoji appears first
 - [x] Sort out the vector for the repo
-- [ ] Examine if we can set up a graph for github users, and check the corresponding relations with that Graph
+- [x] Examine if we can set up a graph for github users, and check the corresponding relations with that Graph
 
 Determine to also use count each as the vector distribution
 

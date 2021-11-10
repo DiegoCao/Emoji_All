@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.random import RandomState
 from pandas.core.frame import DataFrame
 import seaborn as sns
 import pandas as pd 
@@ -11,15 +10,11 @@ import sklearn
 from process import readData, plot_reg
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
-import matplotlib.cm as cm
-import wandb
-from sklearn.preprocessing import normalize
 
 
 
-NUM_CLUSTER = 6
-LENDIX = 10
-SEED = 0
+
+NUM_CLUSTER = 10
 def optimalK(data, nrefs=3, maxClusters=15):
     """
     Calculates KMeans optimal K using Gap Statistic 
@@ -58,8 +53,6 @@ def optimalK(data, nrefs=3, maxClusters=15):
         resultsdf = resultsdf.append({'clusterCount':k, 'gap':gap}, ignore_index=True)
 
 
-        
-
 def calPCA(lis):
 
     pca = PCA(n_components = 10)
@@ -72,39 +65,32 @@ def calPCA(lis):
     return X_reduce
 
 
+
+def runPCA():
+
+
+    pass
+
+
 def plotDataHisto(metrics, labels):
     cntdict = dict()
-    figure, axis = plt.subplots(2, 3)
+    figure, axis = plt.subplots(2, 5)
     for idx, val in enumerate(labels):
         if val not in cntdict:
             cntdict[val] = list()
         cntdict[val].append(metrics[idx])
 
     a = axis.ravel()
-    namelis = []
     for idx, ax in enumerate(a):
         ax.hist(cntdict[idx])
-        title_ = "cluster"+ str(idx)
-        namelis.append(title_)
+        title_ = "cluster"+str(idx)
         ax.set_title(title_)
-        ax.set_xlabel("work user number")
+        ax.set_xlabel("average length calculation")
         ax.set_ylabel("count")
-
-    lis = []
-    for key, val in cntdict.items():
-        tmp = np.asarray(list(val))
-        lis.append(tmp)
-    
-    lis = np.asarray(lis)
-    lis = lis/np.sum(lis, axis = 1)
-    x_labels = ['cluster'+str(i) for i in range(0, NUM_CLUSTER)]
-    
-    # wandb.log({'heatmap_with_text': wandb.plots.HeatMap(matrix_values = lis, x_labels=x_labels, show_text=False)})   
-    # wandb.log({'heatmap_with_text': wandb.plots.HeatMap(scatt, x_labels=x_labels, show_text=False)})   
 
     plt.tight_layout()
     plt.show()
-
+        
 
 def prep():
 
@@ -139,6 +125,7 @@ def prep():
     print(np.max(positions))
     print(np.median(positions))
     print(np.mean(positions))
+
     print(np.max(liscnt))
     print(np.median(liscnt))
     print(np.mean(liscnt))
@@ -152,6 +139,11 @@ def prep():
 
     # print()
     # plt.his
+
+def prep2():
+    conversation = readData("./data/conver", _header = 0)
+
+
 
 def e1():
     repoaids = readData("./data/dfuserswork", _header = 0)
@@ -288,6 +280,21 @@ def clusterRepo():
 
 
     df['sortlis'] = df.apply(getTwo, axis=1)
+    # def readFunc(df):
+ 
+    #     return df[1:-1].split(",")
+
+    # df = pd.read_csv("sortlis.csv")
+    # print(df.head())
+    # df['sortlis'] = df['sortlis'].apply(readFunc)
+    # df.to_csv("sortlis.csv")
+    # def sortFirstposvec(vec):
+    #     lis = []
+    #     flag = False
+    #     for i in vec:
+    #         if i == "true":
+    #             flag = True
+
 
 
 
@@ -342,15 +349,7 @@ def clusterRepo():
                     vec[_id] = 1
         return vec/cnt
 
-    def countVecFunc(df):
-        vec = np.zeros(maxval)
-        for idx, val in enumerate(df):
-            print(val)
-            for _id, v in enumerate(val):
-                if v == 'true' or v ==' true':
-                    vec[_id] = 1
-        return vec
-
+    
     def groupbylength(df):
         vec = np.zeros(maxval)
         cnt = 0
@@ -379,46 +378,17 @@ def clusterRepo():
                     break
         avgpos = np.average(idxlist)     
         return avgpos
-    
-    
             
-    def maxPos(df):
-        vec = np.zeros(maxval)
-        cnt = 0
-        length = 0
-        max_id = 0
-        for idx, val in enumerate(df):
-            length+= len(val)
-            cnt += 1
-            print(val)
-            for _id, v in enumerate(val):
-                if v == 'true' or v ==' true':
-                    if _id > max_id:
-                        max_id = _id
-        
-        return max_id
-
     df = df.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
     df2 = dfold.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
     df3 = dfold.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
-    df4 = dfold.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
-    df5 = dfold.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
-
     df2['avglength'] = df2['sortlis'].apply(groupbylength)
     df2 = df2[['rid', 'avglength']]
     df3['avgpos'] = df3['sortlis'].apply(calRepoAvg)
     df3 = df3[['rid', 'avgpos']]
     df['sortlis'] = df['sortlis'].apply(groupbyFunc)
-    df4['maxoneid'] = df4['sortlis'].apply(maxPos)
-    df4= df4[['rid', 'maxoneid']] 
-    df5['totalvec'] = df5['sortlis'].apply(countVecFunc)
-    df5 = df5[['rid', 'totalvec']]
-
-
-    
     df = df.merge(df2, on='rid',how='inner')
-    df = df.merge(df3, on='rid',how='inner').merge(df4, on='rid', how = 'inner').merge(df5, how='inner')
-
+    df = df.merge(df3, on='rid',how='inner')
     print(df.head())
 
     # df = df[df['avglength'] > 4]
@@ -428,43 +398,9 @@ def clusterRepo():
     
 from ast import literal_eval
 
-def SilHolette(x):
-    from sklearn.metrics import silhouette_score
-
-    sil = []
-    kmax = 10
-    K = range(2,10, 1)
-    # dissimilarity would not be defined for a single cluster, thus, minimum number of clusters should be 2
-    for k in K:
-        kmeans = KMeans(n_clusters = k).fit(x)
-        labels = kmeans.labels_
-        sil.append(silhouette_score(x, labels, metric = 'euclidean'))
-    plt.plot(K, sil,'rx-')
-    plt.xlabel('k')
-    plt.ylabel('Sum_of_squared_distances')  
-    plt.title('Silhouette Method For Optimal k')
-    plt.show()
-
-def plotHisto(dic):
-    print(dic.values())
-    arr = np.vstack(list(dic.values()))
-    print(arr.shape)
-
-    sns.heatmap(arr)
-    arr = normalize(arr, axis = 1, norm='l1')
-    # arr = arr[/np.sum(arr, axis=1)
-    
-    y_labels = ["cluster" + str(i) for i in range(0, NUM_CLUSTER)]
-    x_labels = ["pos" + str(i) for i in range(0, LENDIX)]
-    
-    wandb.log({'heatmap_with_text': wandb.plots.HeatMap(x_labels, y_labels, arr, show_text=True)})   
-    plt.show()
-
- 
-
 def findOptimal(X):
     sumofsquareddis = []
-    K = range(1, 20, 1)
+    K = range(20, 10, 200)
     for k in K:
         km = KMeans(n_clusters=k)
         km = km.fit(X)
@@ -476,76 +412,34 @@ def findOptimal(X):
     plt.title('Elbow Method For Optimal k')
     plt.show()
 
-def plotLabelmap(x, y, labels):
-
-    import colorsys
-    import numpy as np
-    import matplotlib.pyplot as plt
-    N = NUM_CLUSTER
-
-    colors = cm.rainbow(np.linspace(0, 1, N))
-    print(colors)
-    print('the length of ')
-    xdict = {}
-    ydict = {}
-    normy = {}
-
-    for idx, lab in enumerate(labels):
-        if lab not in xdict:
-            xdict[lab] = list()
-            ydict[lab]= list()
-        xdict[lab].append(np.log(x[idx]))
-        ydict[lab].append(y[idx])
-    #     normval = [float(i)/sum(y[idx]) for i in ydict]
-    #     normy[lab].append()
-    for i in range(N):
-        data = [[x,y] for (x, y) in zip(xdict[i], ydict[i])]
-        table = wandb.Table(data=data, columns=["log events", "pos"])
-        wandb.log({"scatterdiagram": wandb.plot.scatter(table, "x", "y", title="Log events vs Pos plot") })
-
-    # for i in range(N):
-    #     wandb.log("scatter",)
-    # plt.scatter(xdict[i],ydict[i],color=colors[i])
-    # plt.ylabel('average position')
-    # plt.xlabel('average events')
-    # plt.show()
-
-
-
 
 def analyzeCluster():
 
-    df = pd.read_pickle('conversation_new.pkl')
-    df = df.loc[df['maxoneid'] < 10]
+    df = pd.read_pickle('conversation.pkl')
     # df.set_index(['rid', 'vec'])
-    # df['totalsum'] = df['sortlis'].apply(sumVec)
-    # df = df[df['avglength']<5]
-    print('the bigger than 5 cnt: ', df.count())
-    
-    dfevent = readData('./data/repoallposts',_header = 0)
-    dfevent.columns = ['rid', 'events']
 
-    aids = readData('./data/dfuserswork', _header = 0)
+
+    # df['totalsum'] = df['sortlis'].apply(sumVec)
+
+    # df = df[df['avglength']>5]
+
+    print('the bigger than 4 cnt: ', df.count())
+    
+
+
+    dfevent = readData('./data/repoavguser_events_fix')
+    dfevent.columns = ['rid', 'events']
+    event1 = dfevent['events']
+
+    aids = readData('./data/dfusers', _header = 0)
     df = df.merge(dfevent, on='rid', how='inner').merge(aids,on='rid',how='inner')
     df['avgevents'] = df['events']/df['repouserscnt']
-    aids = df['repouserscnt']
-
-    print('the mean value of df events', np.mean(df['avgevents']))
-    avgpos = df['avgpos']
-    lengths = df['avglength']
     print('the initial mean', np.mean(df['avgevents']))
+
+    pos = df['avglength']
     print(df.head())
 
     X = df['sortlis']
-    def reduceDim(df, len_idx=LENDIX):
-        return df[:len_idx]   
-
-    print('start redus dims:')
-
-    df['sortlis'] = df['sortlis'].apply(reduceDim)
-    print(df['sortlis'])
-    print(df['totalvec'])
-
     maxidxlis = []
     for i in X:
         arr = np.asarray(i)
@@ -555,19 +449,28 @@ def analyzeCluster():
                 maxidxlis.append(cnt)
             cnt += 1
 
+
+        if len(i)!=924:
+            print('error')
+            exit(1)
+
     print('the max value of the idx is ', max(maxidxlis))
+    
+    # plt.hist(maxidxlis)
+    # plt.show()
+    
     # X = np.vstack(X)
     # print(X.shape)
     # X_new = calPCA(X)
     X = np.vstack(X)
-    print('Vector shape: ', X.shape)
-    print('start finding optimal K:\n')
     # optimalK(X)
     # findOptimal(X)
-    # SilHolette(X)
     X_new = X
+    
     from sklearn import cluster
-    kmeans = cluster.KMeans(n_clusters = NUM_CLUSTER, random_state=SEED)
+
+    
+    kmeans = cluster.KMeans(n_clusters = NUM_CLUSTER)
     kmeans.fit(X_new)
     labels = kmeans.labels_
     print(labels)
@@ -578,12 +481,15 @@ def analyzeCluster():
     # events = df['avgevents']
 
     # print('the mean of events', np.median(events))
+    plotDataHisto(pos, labels=labels)
     # for idx, lab in enumerate(labels):
     #     if lab not in dictevents:
     #         dictevents[lab] = list()
     #     dictevents[lab].append(events[idx])
 
     # res = [np.mean(i) for i in dictevents.values()]
+    
+
 #Then get the frequency count of the non-negative labels
     counts = np.bincount(labels[labels>=0])
     actualcnts = counts*X_new.shape[0]
@@ -594,81 +500,11 @@ def analyzeCluster():
     # plt.plot(res)
     plt.xlabel('cluster')
     plt.ylabel('repo average events (then perform average again)')
-    events = df['avgevents']
-    plotDataHisto(aids, labels=labels)
 
-    print('the mean of events', np.median(events))
-    def getXY(Xs, Ys, labels_):
-        xdict = {}
-        ydict = {}
-        for idx, lab in enumerate(labels_):
-            if lab not in xdict:
-                xdict[lab] = list()
-            xdict[lab].append(Xs[idx])
-        for idx, lab in enumerate(labels_):
-            if lab not in ydict:
-                ydict[lab] = list()
-            ydict[lab].append(Ys[idx])
-        x = [np.mean(i) for i in xdict.values()]
-        y = [np.mean(i) for i in ydict.values()]
-
-        return x, y
-    # for idx, lab in enumerate(labels):
-    #     if lab not in dictevents:
-    #         dictevents[lab] = list()
-    #     dictevents[lab].append(events[idx]) 
-
-    # positions = dict()
-    # for idx, lab in enumerate(labels):
-    #     if lab not in positions:
-    #         positions[lab] = list()
-    #     positions[lab].append(avgpos[idx])
-
-    # x, y = getXY(events,avgpos,labels)
-
-    plotLabelmap(events, aids, labels)
-    totalvec = df['totalvec']
-    print('the labels dimension ', len(labels))
-    heatdic = {}
-    for idx, lab in enumerate(labels):
-        vec = totalvec[idx][:LENDIX]
-        if lab not in heatdic:
-            heatdic[lab] = vec
-        else:
-            heatdic[lab] += vec
-
-    plotHisto(heatdic)
-
-    res = [np.mean(i) for i in dictevents.values()]
-#Then get the frequency count of the non-negative labels
-    # counts = np.bincount(labels[labels>=0])
-    # actualcnts = counts*X_new.shape[0]
-
-    # print(counts)
-    # print(actualcnts)
-    # print('finished')
-    plt.xlabel('cluster event average')
-    plt.ylabel('cluster first postion')
-
-    # 
-    # plt.xlabel('cluster')
-    # plt.ylabel('repo average events (then perform average again)')
     plt.show()
-
-def examineDistribution():
-    df = pd.read_pickle('conversation_new.pkl')
-    val = df.count()
-    df = df.loc[df['maxoneid'] > 50]
-    print('the res is: ',(val- df.count())/val)
 
 
 
 if __name__ == "__main__":
     # clusterRepo()
-    # examineDistribution()
-    filename = "pos_l1_heatmap"
-
-    this_config = dict(num_cluster = NUM_CLUSTER, conversation_length = LENDIX, random_seed=SEED)
-
-    wandb.init(project = "emoji", name = filename, config = this_config)
     analyzeCluster()
