@@ -14,7 +14,7 @@ from sklearn.cluster import KMeans
 import matplotlib.cm as cm
 import wandb
 from sklearn.preprocessing import normalize
-
+from analyze_cluster import run_analysis
 
 
 NUM_CLUSTER = 6
@@ -241,10 +241,6 @@ def filterFunc(row):
     return True
 
 
-
-
-
-    
 def filterEmoji(row):
     Flag = False
     for i in row['commentlis']:
@@ -279,7 +275,6 @@ def clusterRepo():
     df = df[filteremoji]
 
 
-    lengths = [len(i) for i in df['commentlis']]
     
     print(np.average(lengths))
     print(np.max(lengths))
@@ -314,6 +309,7 @@ def clusterRepo():
     riddf = readData("data/issueridmap", _header=0)
     riddf = riddf[pd.notnull(riddf.commentissueid)]
 
+
     print(riddf.head())
     print(df.head())
     df.reset_index(inplace=True)
@@ -323,7 +319,10 @@ def clusterRepo():
     
     riddf.reset_index(inplace=True)
     df = df.merge(riddf, on='commentissueid', how='inner')
+    df.to_pickle('conversation_issue.pck')
     lengths = [len(i) for i in df['sortlis']]
+
+
     print('the max current is: ', np.max(lengths))
     maxval = int(np.max(lengths))
     print(df.head())
@@ -510,7 +509,7 @@ def plotLabelmap(x, y, labels):
     # plt.xlabel('average events')
     # plt.show()
 
-
+import pickle
 
 
 def analyzeCluster():
@@ -542,6 +541,20 @@ def analyzeCluster():
 
     print('start redus dims:')
 
+
+    histlen = np.array(lengths)
+    # density, bins, _ = plt.hist(histlen)
+    bins_ = [i for i in range(0, 11)]
+    plt.hist(histlen, bins=bins_)
+    # count, _ = np.histogram(histlen, bins)
+    # for x,y,num in zip(bins, density, count):
+    #     if num != 0:
+    #         plt.text(x, y+0.05, num, fontsize=10, rotation=-90) # x,y,str
+    plt.xlim([0, 10])
+    plt.xlabel('count')
+    plt.show()
+
+
     df['sortlis'] = df['sortlis'].apply(reduceDim)
     print(df['sortlis'])
     print(df['totalvec'])
@@ -570,6 +583,11 @@ def analyzeCluster():
     kmeans = cluster.KMeans(n_clusters = NUM_CLUSTER, random_state=SEED)
     kmeans.fit(X_new)
     labels = kmeans.labels_
+    kname = "kmeans"+str(NUM_CLUSTER)+".pck"
+    pickle.dump(labels, open(kname, 'wb'))
+
+    rids = df['rid']
+    pickle.dump(rids, open('kmeansrids.pck', 'wb'))
     print(labels)
 
     keys = [i for i in range(0, NUM_CLUSTER)]
@@ -595,7 +613,7 @@ def analyzeCluster():
     plt.xlabel('cluster')
     plt.ylabel('repo average events (then perform average again)')
     events = df['avgevents']
-    plotDataHisto(aids, labels=labels)
+    # plotDataHisto(aids, labels=labels)
 
     print('the mean of events', np.median(events))
     def getXY(Xs, Ys, labels_):
@@ -666,9 +684,12 @@ def examineDistribution():
 if __name__ == "__main__":
     # clusterRepo()
     # examineDistribution()
-    filename = "pos_l1_heatmap"
+    filename = "pos_verification"
+  
 
     this_config = dict(num_cluster = NUM_CLUSTER, conversation_length = LENDIX, random_seed=SEED)
 
-    wandb.init(project = "emoji", name = filename, config = this_config)
+    wandb.init(project = "emoji", name = filename, config = this_config, mode = 'disabled')
     analyzeCluster()
+    # run_analysis(NUM_CLUSTER, LENDIX)
+    
