@@ -9,7 +9,23 @@ import networkx as nx
 import pickle 
 from emoji import UNICODE_EMOJI, EMOJI_UNICODE
 
+import glob
+import pandas as pd
+import os
+def readData(filepath, _header = None):
+    csv_files = glob.glob(os.path.join(filepath, "*.csv"))
+    lis = []
+    for f in csv_files:
+        df = pd.read_csv(f, header = _header)
+        lis.append(df)
 
+    frames = pd.concat(lis, axis = 0)
+    # frames.columns = _columns
+    print(frames.head())
+
+    return frames
+
+WINSIZE = 2
 def is_emoji(s):
     if s in UNICODE_EMOJI['en']:
         return True
@@ -114,15 +130,32 @@ def construct_regex(emoji_entries):
 
 
 def buildG(texts, regex):
+    """
+        Only consider the one within emoji usage
+    """
     G = nx.Graph()
-    tokenset = set()
     for text in texts:
         tokens = re.findall(regex, text)
         for idx, token in enumerate(tokens):
             if is_emoji(token):
-                window = tokens[max(0, idx-)]
+                window = tokens[max(0, idx-WINSIZE),min(len(tokens)-1,idx+WINSIZE)]
+                idx = 0
+                if token not in G.nodes():
+                    G.add_node(token)
+                for w in window:
+                    if (idx == WINSIZE):
+                        continue
+                    idx += 1
+                    if w not in G.nodes():
+                        G.add_node(w)
+                    G.add_edge(w,token)
 
+    return G
             
+def visualize():
+
+    # Need
+    pass
 
 if __name__ == "__main__":
     emoji_entries = emoji_entries_construction()
@@ -134,8 +167,11 @@ if __name__ == "__main__":
     # list1=re.findall(rgx,shop)    
     # print(list1)
 
-    a = nx.Graph()
+    commentmsg = readData("/hadoop-fuse/user/hangrui/conversation/commentmsg")
+    issuemsg = readData("/hadoop-fuse/user/hangruidata/conversation/issuemsg")
+    lis1 = commentmsg["msg"]
+    lis2 = issuemsg["msg"]
+    texts = lis1.extend(lis2)
 
-
-    emojis = re.findall(all_emoji_regex, msg)
-    print(emojis)
+    G = buildG(texts, all_emoji_regex)
+    pickle.dump(G, open("token_graph.txt", "wb"))
