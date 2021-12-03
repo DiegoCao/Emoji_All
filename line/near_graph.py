@@ -16,7 +16,7 @@ def readData(filepath, _header = None):
     csv_files = glob.glob(os.path.join(filepath, "*.csv"))
     lis = []
     for f in csv_files:
-        df = pd.read_csv(f, header = _header)
+        df = pd.read_csv(f)
         lis.append(df)
 
     frames = pd.concat(lis, axis = 0)
@@ -167,8 +167,8 @@ if __name__ == "__main__":
     # list1=re.findall(rgx,shop)    
     # print(list1)
 
-    commentmsg = readData("/hadoop-fuse/user/hangrui/conversation/commentmsg", _header=["commentid","getMsg2(commentmsglist)","getid(commentmsglist)"])
-    issuemsg = readData("/hadoop-fuse/user/hangrui/conversation/issuemsg", _header=["issueid","getMsg(issuemsglist)"])
+    commentmsg = readData("/hadoop-fuse/user/hangrui/conversation/commentmsg")
+    issuemsg = readData("/hadoop-fuse/user/hangrui/conversation/issuemsg")
     lis1 = commentmsg["msg"]
     lis2 = issuemsg["msg"]
     texts = lis1.extend(lis2)
