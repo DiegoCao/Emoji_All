@@ -1,9 +1,21 @@
+import enum
 import numpy as np
 import json
 filepath = ""
 import re,io
 from collections import namedtuple, Counter
 from utils import get_ranges
+import networkx as nx
+import pickle 
+from emoji import UNICODE_EMOJI, EMOJI_UNICODE
+
+
+def is_emoji(s):
+    if s in UNICODE_EMOJI['en']:
+        return True
+    if s in EMOJI_UNICODE['en']:
+        return True
+    return False
 
 def removeEmail(text):
     e = "\S*@\S*\s?"
@@ -101,14 +113,29 @@ def construct_regex(emoji_entries):
     return all_emoji_regex, emoji_dict
 
 
+def buildG(texts, regex):
+    G = nx.Graph()
+    tokenset = set()
+    for text in texts:
+        tokens = re.findall(regex, text)
+        for idx, token in enumerate(tokens):
+            if is_emoji(token):
+                window = tokens[max(0, idx-)]
+
+            
+
 if __name__ == "__main__":
     emoji_entries = emoji_entries_construction()
     all_emoji_regex, emoji_dict = construct_regex(emoji_entries)
     msg = "🤔 🙈 😌😌 hello 💕👭👙 "
     shop="hello seattle what have you got💕"
-    
+    msg2= "😊"
+    print(is_emoji(msg2))
     # list1=re.findall(rgx,shop)    
     # print(list1)
+
+    a = nx.Graph()
+
 
     emojis = re.findall(all_emoji_regex, msg)
     print(emojis)

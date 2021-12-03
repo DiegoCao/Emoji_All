@@ -2,12 +2,14 @@
     This file used to quantify the other parts of the project
 """
 import enum
+from os import read
 import pickle
 from process import readData, plot_reg
 import pandas as pd
 import wandb
 import numpy as np
 from sklearn.preprocessing import normalize
+from process import readData, plot_reg
 
 def constructCntarray(rid_pos, LENDIX):
     lis_arr = []
@@ -51,13 +53,24 @@ def run_analysis(num_cluster, LENDIX):
 
         return idxlis
 
+    def getLen(df):
+        return len(df)
+
+    df['lislen'] = df['sortlis'].apply(getLen)
+    df = df[df['lislen']==10]
+
+
     df['conv_pos'] = df['sortlis'].apply(calPos)
     # rid_pos = dict(.fromkeys([i for i in range(0, NUM_CLUSTER)],list())) !!1!!!!!!!WHY ISSUE???
     rid_pos = dict()
     length_distri = dict()
     
     print(df.head())
+    id_ = 0
     for pos, rid in zip(df['conv_pos'], df['rid']):
+        id_ += 1
+        if (id_ == 1):
+            continue
         if rid in labeldict:
             lid = labeldict[rid] # The label id for repo id
             # the rid position append idx
@@ -101,3 +114,13 @@ def run_analysis(num_cluster, LENDIX):
     wandb.log({'heatmap_for_conv_length': wandb.plots.HeatMap(x_labels, y_labels, lis_arr, show_text=True)}) 
     table = wandb.Table(data=data, columns=['allemojiposition'])
     wandb.log({'all_position_histogram':wandb.plot.histogram(table, histval)})
+
+
+def discussAvgtype(num_cluster):
+    NUM_CLUSTER=num_cluster
+    kname ="kmeans"+str(NUM_CLUSTER)+".pck"
+    labels = pickle.load(open(kname, 'rb'))
+    rids = pickle.load(open('kmeansrids.pck', 'rb'))
+    repogroup = readData("./data/restypenew")
+
+    

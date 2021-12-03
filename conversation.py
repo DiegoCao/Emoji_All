@@ -58,8 +58,6 @@ def optimalK(data, nrefs=3, maxClusters=15):
         resultsdf = resultsdf.append({'clusterCount':k, 'gap':gap}, ignore_index=True)
 
 
-        
-
 def calPCA(lis):
 
     pca = PCA(n_components = 10)
@@ -276,9 +274,9 @@ def clusterRepo():
 
 
     
-    print(np.average(lengths))
-    print(np.max(lengths))
-    print(np.median(lengths))
+    # print(np.average(lengths))
+    # print(np.max(lengths))
+    # print(np.median(lengths))
 
 
 
@@ -362,6 +360,11 @@ def clusterRepo():
                 if v == 'true' or v ==' true':
                     vec[_id] = 1
         return length/cnt
+
+    def getLen(df):
+        return len(df)
+
+    
  
     def calRepoAvg(df):
         vec = np.zeros(maxval)
@@ -397,6 +400,8 @@ def clusterRepo():
         
         return max_id
 
+    df['lislen'] = df['sortlis'].apply(getLen)
+    df = df[df['lislen']==9]
     df = df.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
     df2 = dfold.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
     df3 = dfold.groupby('rid')['sortlis'].apply(list).reset_index(name='sortlis')
@@ -423,7 +428,7 @@ def clusterRepo():
     # df = df[df['avglength'] > 4]
     print('the remaining rows are: ', df.count())
     print(df.head())
-    df.to_pickle('conversation_new.pkl')
+    df.to_pickle('conversation_new_len9.pkl')
     
 from ast import literal_eval
 
@@ -514,8 +519,8 @@ import pickle
 
 def analyzeCluster():
 
-    df = pd.read_pickle('conversation_new.pkl')
-    df = df.loc[df['maxoneid'] < 10]
+    df = pd.read_pickle('conversation_new_len10.pkl')
+    # df = df.loc[df['maxoneid'] < 10]
     # df.set_index(['rid', 'vec'])
     # df['totalsum'] = df['sortlis'].apply(sumVec)
     # df = df[df['avglength']<5]
@@ -684,12 +689,12 @@ def examineDistribution():
 if __name__ == "__main__":
     # clusterRepo()
     # examineDistribution()
-    filename = "pos_verification"
+    filename = "pos_verification_10_withoutissue"
   
 
     this_config = dict(num_cluster = NUM_CLUSTER, conversation_length = LENDIX, random_seed=SEED)
 
-    wandb.init(project = "emoji", name = filename, config = this_config, mode = 'disabled')
-    analyzeCluster()
-    # run_analysis(NUM_CLUSTER, LENDIX)
+    wandb.init(project = "emoji", name = filename, config = this_config)
+    # analyzeCluster()
+    run_analysis(NUM_CLUSTER, LENDIX)
     
