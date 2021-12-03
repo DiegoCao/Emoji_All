@@ -167,8 +167,8 @@ if __name__ == "__main__":
     # list1=re.findall(rgx,shop)    
     # print(list1)
 
-    commentmsg = readData("/hadoop-fuse/user/hangrui/conversation/commentmsg")
-    issuemsg = readData("/hadoop-fuse/user/hangruidata/conversation/issuemsg")
+    commentmsg = readData("/hadoop-fuse/user/hangrui/conversation/commentmsg", _header=["commentid","getMsg2(commentmsglist)","getid(commentmsglist)"])
+    issuemsg = readData("/hadoop-fuse/user/hangrui/conversation/issuemsg", _header=["issueid","getMsg(issuemsglist)"])
     lis1 = commentmsg["msg"]
     lis2 = issuemsg["msg"]
     texts = lis1.extend(lis2)
